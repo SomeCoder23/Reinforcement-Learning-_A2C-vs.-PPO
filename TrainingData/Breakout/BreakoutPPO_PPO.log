@@ -1,0 +1,10 @@
+06-03 22:14:00: Training starting...Total steps: 10000000
+06-03 22:14:39: Step: 30720 Env #5: New best return at episode #1 -> 4.0!!
+06-03 22:16:24: Step: 113664 Env #2: New best return at episode #1 -> 5.0!!
+06-03 22:19:11: Step: 249856 Env #3: New best return at episode #1 -> 12.0!!
+06-03 22:27:06: Progress: 6.4% Step: 640000, Average Reward: 1.354, Time Since Last Log: 0:13:05.684832
+06-03 22:27:27: Step: 658432 Env #1: New best return at episode #2 -> 18.0!!
+06-03 22:40:18: Progress: 12.8% Step: 1280000, Average Reward: 3.389, Time Since Last Log: 0:13:11.813142
+06-03 22:40:49: Step: 1305600 Env #5: New best return at episode #4 -> 21.0!!
+06-03 22:44:18: Step: 1464320 Env #5: New best return at episode #5 -> 30.0!!
+06-03 22:47:09: Step: 1597440 Env #6: New best return at episode #2 -> 31.0!!
