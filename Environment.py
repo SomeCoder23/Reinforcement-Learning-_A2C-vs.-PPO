@@ -9,7 +9,6 @@ from Agent import ActorCritic_Agent
 import random
 from datetime import datetime, timedelta
 from tqdm import tqdm
-from abc import ABC, abstractmethod
 
 
 # from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -23,13 +22,14 @@ from stable_baselines3.common.atari_wrappers import (
 
 DATE_FORMAT = "%m-%d %H:%M:%S"
 
-class Environment(ABC):
-    def __init__(self, env_name, args, writer):
+class Environment():
+    def __init__(self, env_name, args, writer, algo):
         self.args = args
         self.env_name = env_name
         self.writer = writer
         self.env_id = args.env_id
         self.file_name = args.file_name
+        self.agent = ActorCritic_Agent(args, env_name, algo)
 
     def setup_envs(self, render_mode, num_envs, testing = False):
         print("Setting up " + str(num_envs) + " envs...")
@@ -159,45 +159,89 @@ class Environment(ABC):
             file.write(log_message + '\n')
 
         num_envs = self.args.num_envs
-        save_time = min(self.args.total_steps * 0.1, 80000)
 
         # #initialize some variables for showcasing results
         rewards_per_episode = [[] for _ in range(num_envs)]
         episode_lengths = [[] for _ in range(num_envs)]
         episode_count = [1 for _ in range(num_envs)]
         start_time = datetime.now()
+        best_return = -float('inf')
+        
         last_graph_update_time = start_time
         last_log_time = start_time
-        best_return = -float('inf')
+        last_save_time = start_time
 
         obs, _ = envs.reset(seed=SEED)
+        envs_starting = np.ones(num_envs)
         envs_resets = np.zeros(num_envs)
+        self.no_grad = self.args.n_steps > 1
         step = 0
 
         #training loop, trains for a certain amount of steps not episodes since we are using vectorized environments
         while step < self.args.total_steps:
-            next_obs, terminations, truncations, infos, step_increment = self.run_step(step, obs, envs_resets, envs)
-            obs = next_obs
-            step += step_increment
+            # next_obs, terminations, truncations, infos, step_increment = self.run_step(step, obs, envs_resets, envs)
+            if not self.args.no_anneal_lr:
+                frac = 1.0 - (step - 1.0) / self.args.total_steps
+                lrnow = frac * self.args.lr
+                self.agent.optimizer.param_groups[0]["lr"] = lrnow
 
-            #if episode finished save episode return and length + check if best return was beaten
-            for i, (terminated, truncated) in enumerate(zip(terminations, truncations)):
-                if terminated or truncated:
-                    if 'episode' in infos:
-                        episode_count[i] += 1
-                        eps_return = infos['episode']['r'][i]
-                        ep_length = infos['episode']['l'][i]
-                        rewards_per_episode[i].append(eps_return)
-                        episode_lengths[i].append(ep_length)
-                        self.writer.add_scalar("charts/episodic_return", eps_return, step)
-                        self.writer.add_scalar("charts/episodic_length", ep_length, step)
+            for _ in range(self.args.n_steps):
+                action_logits, values, actions = self.agent.get_actor_critic_values(obs, sample_action=True, no_grad=self.no_grad)
+                log_probs, _ = self.agent.get_log_probs_and_entropy(action_logits, actions)
 
-                        #check if best return was surpassed
-                        if (eps_return.max() > best_return).any():
-                            best_return = eps_return.max()
-                            with open(self.agent.LOG_FILE, 'a') as file:
-                                file.write(f'{current_time.strftime(DATE_FORMAT)}: Step: {step} Env #{i}: New best return at episode #{episode_count[i] - 1} -> {best_return}!!\n')
-            
+                actions_np = actions.cpu().numpy()
+                next_obs, rewards, terminations, truncations, infos = envs.step(actions_np)
+
+                #add to rollout buffer if using one (n-steps more than one)
+                if self.args.n_steps > 1:
+                    self.agent.buffer.add(
+                        obs,
+                        actions_np,
+                        rewards,
+                        envs_starting,
+                        values.squeeze(-1),
+                        log_probs
+                    )
+                envs_starting = np.logical_or(terminations, truncations)
+                obs = next_obs
+                step += self.args.num_envs
+
+                #if episode finished save episode return and length + check if best return was beaten
+                current_time = datetime.now()
+                for i, (terminated, truncated) in enumerate(zip(terminations, truncations)):
+                    if terminated or truncated:
+                        if 'episode' in infos:
+                            episode_count[i] += 1
+                            eps_return = infos['episode']['r'][i]
+                            ep_length = infos['episode']['l'][i]
+                            rewards_per_episode[i].append(eps_return)
+                            episode_lengths[i].append(ep_length)
+                            self.writer.add_scalar("charts/episodic_return", eps_return, step)
+                            self.writer.add_scalar("charts/episodic_length", ep_length, step)
+
+                            #check if best return was surpassed
+                            if (eps_return.max() > best_return).any():
+                                best_return = eps_return.max()
+                                with open(self.agent.LOG_FILE, 'a') as file:
+                                    file.write(f'{current_time.strftime(DATE_FORMAT)}: Step: {step} Env #{i}: New best return at episode #{episode_count[i] - 1} -> {best_return}!!\n')
+                
+
+            #update actor and critic networks every n-step
+            if self.agent.buffer != None:
+                self.agent.update_with_buffer(next_obs, envs_starting)
+
+            elif self.args.n_steps <= 1:
+                mask = np.logical_not(envs_resets)
+                if mask.any():
+                    self.agent.update_no_buffer(
+                        next_obs[mask], 
+                        actions[mask], 
+                        values[mask], 
+                        action_logits[mask], 
+                        rewards[mask], 
+                        envs_starting[mask]
+                    )
+
             #update results graph every 10 seconds
             current_time = datetime.now()
             if current_time - last_graph_update_time > timedelta(seconds=10):
@@ -221,8 +265,9 @@ class Environment(ABC):
                 self.test(10, env = eval_env)
 
             #save model
-            if step % save_time == 0 and step != 0:
+            if current_time - last_save_time > timedelta(seconds=1800):
                 self.agent.save(self.file_name)
+                last_save_time = current_time
 
             #check if achieved max score consecutively for early stopping
             achieved_max = np.all(np.array(
@@ -235,7 +280,6 @@ class Environment(ABC):
                 with open(self.agent.LOG_FILE, 'a') as file:
                     file.write(f'Step: {step} -> Achieved Max Reward!! \n')
                 break
-
             envs_resets = np.logical_or(terminations, truncations)
 
         envs.close()
@@ -255,7 +299,6 @@ class Environment(ABC):
         self.writer.close()
 
         self._plot_final_rewards(rewards_per_episode)
-        print(rewards_per_episode)
 
     def test(self, episodes, env = None, plot_results = False):
 
@@ -272,7 +315,8 @@ class Environment(ABC):
             done = False
             ep_rewards = 0
             while not done:
-                obs, reward, terminated, truncated, info = self.run_test_step(obs, env)
+                _, _, action = self.agent.get_actor_critic_values([obs], sample_action=True)
+                obs, reward, terminated, truncated, info = env.step(action.item())
                 done = terminated or truncated
                 ep_rewards += reward
 
@@ -317,68 +361,4 @@ class Environment(ABC):
         plt.title('Histogram of Rewards')
         plt.show()
         
-    @abstractmethod
-    def run_step(self, step, obs, resets, envs):
-        pass
-
-    @abstractmethod
-    def run_test_step(self, obs, env):
-        pass
-
-class ActorCritic_Environment(Environment):
-    def __init__(self, env_name, args, writer, algo):
-        super().__init__(env_name, args, writer)
-        self.agent = ActorCritic_Agent(args, env_name, algo)
-        self.starting = np.ones(args.num_envs)
-        self.no_grad = self.args.n_steps > 1
-
-    def run_step(self, step, obs, resets, envs):
-        if not self.args.no_anneal_lr:
-            frac = 1.0 - (step - 1.0) / self.args.total_steps
-            lrnow = frac * self.args.lr
-            self.agent.optimizer.param_groups[0]["lr"] = lrnow
-
-        for _ in range(self.args.n_steps):
-            action_logits, values, actions = self.agent.get_actor_critic_values(obs, sample_action=True, no_grad=self.no_grad)
-            log_probs, _ = self.agent.get_log_probs_and_entropy(action_logits, actions)
-
-            actions_np = actions.cpu().numpy()
-            next_obs, rewards, terminations, truncations, infos = envs.step(actions_np)
-            dones = terminations | truncations
-
-            #add to rollout buffer if using one (n-steps more than one)
-            if self.args.n_steps > 1:
-                self.agent.buffer.add(
-                    obs,
-                    actions_np,
-                    rewards,
-                    self.starting,
-                    values.squeeze(-1),
-                    log_probs
-                )
-            self.starting = dones
-            obs = next_obs
-
-        #update actor and critic networks every n-step
-        if self.agent.buffer != None:
-            self.agent.update_with_buffer(next_obs, dones)
-            step_increment = self.args.n_steps * self.args.num_envs
-
-        elif self.args.n_steps <= 1:
-            mask = np.logical_not(resets)
-            if mask.any():
-                self.agent.update_no_buffer(
-                    next_obs[mask], 
-                    actions[mask], 
-                    values[mask], 
-                    action_logits[mask], 
-                    rewards[mask], 
-                    dones[mask]
-                )
-            step_increment = 1
-
-        return next_obs, terminations, truncations, infos, step_increment
     
-    def run_test_step(self, obs, env):
-        _, _, action = self.agent.get_actor_critic_values([obs], sample_action=True)
-        return env.step(action.item())

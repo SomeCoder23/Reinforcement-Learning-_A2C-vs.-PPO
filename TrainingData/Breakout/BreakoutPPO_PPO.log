@@ -8,3 +8,32 @@
 06-03 22:40:49: Step: 1305600 Env #5: New best return at episode #4 -> 21.0!!
 06-03 22:44:18: Step: 1464320 Env #5: New best return at episode #5 -> 30.0!!
 06-03 22:47:09: Step: 1597440 Env #6: New best return at episode #2 -> 31.0!!
+06-03 22:54:59: Progress: 19.2% Step: 1920000, Average Reward: 5.288, Time Since Last Log: 0:14:40.746274
+06-03 22:58:23: Step: 2057216 Env #2: New best return at episode #7 -> 47.0!!
+06-03 23:01:36: Step: 2186240 Env #0: New best return at episode #6 -> 55.0!!
+06-03 23:10:54: Progress: 25.6% Step: 2560000, Average Reward: 7.92, Time Since Last Log: 0:15:55.379322
+06-03 23:13:08: Step: 2650112 Env #0: New best return at episode #7 -> 79.0!!
+06-03 23:21:00: Step: 2967552 Env #4: New best return at episode #6 -> 123.0!!
+06-03 23:26:51: Progress: 32.0% Step: 3200000, Average Reward: 10.052, Time Since Last Log: 0:15:56.559120
+06-03 23:34:14: Step: 3497984 Env #3: New best return at episode #5 -> 172.0!!
+06-03 23:34:53: Step: 3524608 Env #2: New best return at episode #9 -> 220.0!!
+06-03 23:42:45: Progress: 38.4% Step: 3840000, Average Reward: 14.677, Time Since Last Log: 0:15:54.908537
+06-03 23:46:19: Step: 3983360 Env #2: New best return at episode #10 -> 371.0!!
+06-03 23:58:37: Step: 4477952 Env #3: New best return at episode #7 -> 403.0!!
+06-03 23:58:41: Progress: 44.8% Step: 4480000, Average Reward: 25.844, Time Since Last Log: 0:15:55.906241
+06-04 00:14:31: Progress: 51.2% Step: 5120000, Average Reward: 36.635, Time Since Last Log: 0:15:49.333180
+06-04 00:30:26: Progress: 57.6% Step: 5760000, Average Reward: 47.042, Time Since Last Log: 0:15:55.486636
+06-04 00:46:19: Progress: 64.0% Step: 6400000, Average Reward: 51.356, Time Since Last Log: 0:15:52.882466
+06-04 01:01:54: Progress: 70.4% Step: 7040000, Average Reward: 54.663, Time Since Last Log: 0:15:34.889143
+06-04 01:16:47: Step: 7655424 Env #5: New best return at episode #9 -> 417.0!!
+06-04 01:17:24: Progress: 76.8% Step: 7680000, Average Reward: 61.312, Time Since Last Log: 0:15:29.804133
+06-04 01:22:28: Step: 7890944 Env #6: New best return at episode #6 -> 422.0!!
+06-04 01:31:57: Step: 8285184 Env #5: New best return at episode #10 -> 428.0!!
+06-04 01:32:48: Progress: 83.2% Step: 8320000, Average Reward: 68.902, Time Since Last Log: 0:15:24.443298
+06-04 01:48:11: Progress: 89.6% Step: 8960000, Average Reward: 83.598, Time Since Last Log: 0:15:23.226460
+06-04 02:03:32: Progress: 96.0% Step: 9600000, Average Reward: 87.152, Time Since Last Log: 0:15:20.649727
+06-04 03:13:44: Test Results over 100 episodes: 
+Average Reward: 426.350 
+Max Reward: 818.0 
+Min Reward: 228.0 
+Standard Deviation: 84.663

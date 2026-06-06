@@ -2,9 +2,8 @@ import argparse
 from enum import Enum
 
 class Algorithm(Enum):
-    REINFORCE = 1
-    A2C = 2
-    PPO = 3
+    A2C = 1
+    PPO = 2
 
 class Arguments:
     """
@@ -23,16 +22,12 @@ class Arguments:
         p.add_argument("--seed", type=int, default=None)
         p.add_argument('--train', help='Training mode', action='store_true')
         p.add_argument('--test-episodes', help='Number of episodes to test for', default=100, type=int)
-        p.add_argument("--start-training-at", help='When to start actually training networks (in steps)', type=int, default=self.hyperparameters.get("start_training", 0))
         p.add_argument("--atari", type=self._str2bool, nargs="?", const=True, default=self.hyperparameters.get("atari", False))
         
         algo = self._parse_algorithm(algo)
         config = {}
-        if algo == Algorithm.REINFORCE:
-            print("Getting REINFORCE hyperparameters...")
-            config = self.hyperparameters['reinforce']
 
-        elif algo == Algorithm.A2C or algo == Algorithm.PPO:
+        if algo == Algorithm.A2C or algo == Algorithm.PPO:
             print("Getting actor-critic hyperparameters...")
             config = self.hyperparameters['a2c']
             p.add_argument('--no-clip-grad', help='If true, does not clips gradient during training', action='store_true')

@@ -2,7 +2,6 @@ breakout:
   env_id: "BreakoutNoFrameskip-v4"
   file_name: "Breakout04_Rainbow"
   atari: true
-  start_training: 80000
   max_steps: 27000
   eval_freq: 1000000 
   a2c:
@@ -19,66 +18,5 @@ breakout:
     entropy-weight: 0.01
     value-weight: 1.0
 
-
-pong:
-  env_id: "ALE/Pong-v5"
-  file_name: "Pong01_Rainbow"
-  atari: true
-  start_training: 80000
-  max_return: 21
-  actor-critic:
-      steps: 10000000
-      num_envs: 16
-      n-steps: 5
-      lr: 0.0004
-      value-weight: 0.5
-
-
-pacman:
-  env_id: "ALE/Pacman-v5"
-  steps: 10000000
-  start_training: 40000
-  lr: 0.000125
-  target_sync_freq: 8500
-  buffer_size: 500000
-  enable_dueling_dqn: true
-  file_name: "Pacman_DQN_Results"
-  atari: true
-
-lunerlander:
-  env_id: "LunarLander-v2"
-  episodes: 1000
-  lr: 0.00025
-  final_epsilon: 0.1
-  target_sync_freq: 100
-  buffer_size: 100000
-  enable_dueling_dqn: true
-  file_name: "LunerLander_DQN_Results"
-  atari: false
-
-bipedal_walker:
-  env_id: "BipedalWalker-v3"
-  episodes: 1000
-  lr: 0.00025
-  final_epsilon: 0.1
-  target_sync_freq: 100
-  buffer_size: 100000
-  enable_dueling_dqn: true
-  file_name: "BipedalWalker_DQN_Results"
-  atari: false
-
-cartpole:
-  env_id: "CartPole-v1"
-  steps: 100000
-  start_training: 0
-  decay_start_step: 1
-  num_envs: 1
-  max_return: 500
-  lr: 0.002
-  target_sync_freq: 50
-  buffer_size: 10000
-  enable_dueling_dqn: true
-  file_name: "CartPole"
-  atari: false
 
 

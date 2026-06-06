@@ -13,8 +13,6 @@ import os
 from abc import ABC, abstractmethod
 
 from Network import ActorCritic
-from ReplayBuffer import Prioritized_Replay_Buffer
-
 from stable_baselines3.common.buffers import RolloutBuffer
 
 from arguments import Algorithm
@@ -65,9 +63,7 @@ class Agent(ABC):
             mean_rewards = np.convolve(rewards_per_env[i], np.ones(window)/window, mode="valid")
             plt.plot(mean_rewards, label=f"Env#{i + 1}")
 
-        if collected_rewards:
-            plt.legend()
-        else:
+        if collected_rewards == 0:
             return
 
 
@@ -82,8 +78,6 @@ class Agent(ABC):
             window = min(50, len(episode_lengths[i]) + 1)
             mean_lengths = np.convolve(episode_lengths[i], np.ones(window)/window, mode="valid")
             plt.plot(mean_lengths, label=f"Env#{i + 1}")
-
-        plt.legend()
         
 
         plt.subplots_adjust(wspace=1.0, hspace=1.0)
@@ -124,12 +118,13 @@ class ActorCritic_Agent(Agent):
             self.max_norm = args.max_norm
             self.n_envs = args.num_envs
             self.clip_grad = not args.no_clip_grad
-            print(f'Clip Grad = {self.clip_grad}')
             self.buffer = None
-            self.update_epochs = args.update_epochs
-            self.mini_batch_size = (self.n_envs * self.n_steps) // args.num_mini_batch
-            self.clip_coef = args.clip_coef
-            self.target_kl = args.target_kl
+
+            if algo == Algorithm.PPO:
+                self.update_epochs = args.update_epochs
+                self.mini_batch_size = (self.n_envs * self.n_steps) // args.num_mini_batch
+                self.clip_coef = args.clip_coef
+                self.target_kl = args.target_kl
 
     def initialize_buffer(self, envs):
         self.buffer = RolloutBuffer(

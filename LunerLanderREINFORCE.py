@@ -16,20 +16,12 @@ import gymnasium as gym
 plt.rcParams["figure.figsize"] = (10, 5)
 
 class Policy_Network(nn.Module):
-    """Parametrized Policy Network."""
 
     def __init__(self, obs_space_dims: int, action_space_dims: int):
-        """Initializes a neural network that estimates the mean and standard deviation
-         of a normal distribution from which an action is sampled from.
-
-        Args:
-            obs_space_dims: Dimension of the observation space
-            action_space_dims: Dimension of the action space
-        """
         super().__init__()
 
-        hidden_space1 = 32 # Nothing special with 16, feel free to change
-        hidden_space2 = 64  # Nothing special with 32, feel free to change
+        hidden_space1 = 32 
+        hidden_space2 = 64  
 
         # Shared Network
         self.shared_net = nn.Sequential(
@@ -171,7 +163,6 @@ def train(total_num_episodes : int = 5e3, load : bool = False, save_file_name :s
     timesteps_over_episodes = []
 
     for episode in tqdm(range(total_num_episodes)):
-        # gymnasium v26 requires users to set seed while resetting the environment
         obs, info = wrapped_env.reset(seed=seed)
         timesteps = 0
         done = False
