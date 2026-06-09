@@ -1,6 +1,5 @@
 import argparse
 from enum import Enum
-
 class Algorithm(Enum):
     A2C = 1
     PPO = 2
